@@ -122,6 +122,7 @@ do_apt_fetch() {
 
 addtask apt_fetch
 do_apt_fetch[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
+do_apt_fetch[network] = "1"
 
 # Add dependency from the correct buildchroot: host or target
 do_apt_fetch[depends] += "${BUILDCHROOT_DEP}"
@@ -129,6 +130,7 @@ do_apt_fetch[depends] += "${BUILDCHROOT_DEP}"
 # Add dependency from the correct schroot: host or target
 do_apt_fetch[depends] += "${SCHROOT_DEP}"
 
+do_apt_unpack[network] = "1"
 do_apt_unpack() {
     rm -rf ${S}
     schroot_create_configs
@@ -242,6 +244,7 @@ def isar_export_build_settings(d):
     os.environ['DEB_BUILD_OPTIONS']  = isar_deb_build_options(d)
     os.environ['DEB_BUILD_PROFILES'] = isar_deb_build_profiles(d)
 
+do_dpkg_build[network] = "1"
 python do_dpkg_build() {
     bb.build.exec_func('schroot_create_configs', d)
     try:
@@ -292,6 +295,7 @@ deb_clean() {
 }
 # the clean function modifies isar-apt
 do_clean[lockfiles] = "${REPO_ISAR_DIR}/isar.lock"
+do_clean[network] = "1"
 
 do_deploy_deb() {
     deb_clean
@@ -343,6 +347,7 @@ addtask devshell after do_prepare_build
 DEVSHELL_STARTDIR ?= "${S}"
 do_devshell[dirs] = "${DEVSHELL_STARTDIR}"
 do_devshell[nostamp] = "1"
+do_devshell[network] = "1"
 
 python do_devshell_nodeps() {
     bb.build.exec_func('do_devshell', d)
@@ -353,3 +358,4 @@ python do_devshell_nodeps() {
 addtask devshell_nodeps after do_prepare_build
 do_devshell_nodeps[dirs] = "${DEVSHELL_STARTDIR}"
 do_devshell_nodeps[nostamp] = "1"
+do_devshell_nodeps[network] = "1"
