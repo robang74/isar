@@ -2797,8 +2797,11 @@ class ParserReflect(object):
     # Compute a signature over the grammar
     def signature(self):
         try:
-            import hashlib
-            sig = hashlib.new('MD5', usedforsecurity=False)
+            from hashlib import md5
+        except ImportError:
+            from md5 import md5
+        try:
+            sig = md5()
             if self.start:
                 sig.update(self.start.encode('latin-1'))
             if self.prec:
