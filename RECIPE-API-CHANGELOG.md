@@ -441,3 +441,17 @@ exist, empty variables are forwarded.
 
 **Note about reproducibility**: the forwarded variables must not have any influence on the generated package.
 This mechanism must also not be used to inject build configurations. For these cases, templates should be used.
+
+### Override syntax changes
+
+Using `_` in override syntax was changed to `:`.
+All the recipes should be changed manually or with helper script:
+
+```
+$ python3 scripts/contrib/convert-overrides.py <layer_path>
+```
+
+### Network usage tasks should be marked
+
+With the new bitbake version all the tasks need network access should be marked
+with the flag [network] = '1'.
