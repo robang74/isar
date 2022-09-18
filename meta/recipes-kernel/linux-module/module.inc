@@ -33,6 +33,6 @@ do_prepare_build() {
     cp -r ${WORKDIR}/debian ${S}/
 
     for module in ${AUTOLOAD}; do
-        echo "echo $module >> /etc/modules" >> ${S}/debian/postinst
-    done
+        echo "echo $module >> /etc/modules"
+    done >> ${S}/debian/postinst
 }
