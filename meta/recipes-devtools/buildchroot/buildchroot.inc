@@ -6,7 +6,7 @@
 LICENSE = "gpl-2.0"
 LIC_FILES_CHKSUM = "file://${LAYERDIR_core}/licenses/COPYING.GPLv2;md5=751419260aa954499f7abaabaa882bbe"
 
-FILESPATH_prepend := "${THISDIR}/files:"
+FILESPATH:prepend := "${THISDIR}/files:"
 SRC_URI = "file://configscript.sh \
            file://build.sh \
            file://common.sh \
@@ -23,7 +23,7 @@ ROOTFS_MANIFEST_DEPLOY_DIR = "${DEPLOY_DIR_BUILDCHROOT}"
 ROOTFS_DPKGSTATUS_DEPLOY_DIR = "${DEPLOY_DIR_BUILDCHROOT}"
 ROOTFS_FEATURES += "generate-manifest export-dpkg-status"
 
-BUILDCHROOT_COMPAT_PREINSTALL_compat-arch = " \
+BUILDCHROOT_COMPAT_PREINSTALL:compat-arch = " \
     libc6:${COMPAT_DISTRO_ARCH} \
     crossbuild-essential-${COMPAT_DISTRO_ARCH}"
 
@@ -42,7 +42,7 @@ BUILDCHROOT_PREINSTALL_COMMON = " \
     equivs \
     adduser"
 
-rootfs_do_mounts_append() {
+rootfs_do_mounts:append() {
     sudo -s <<'EOSUDO'
     set -e
     mkdir -p '${BUILDCHROOT_DIR}/downloads'

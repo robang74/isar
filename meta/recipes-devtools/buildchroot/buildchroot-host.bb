@@ -17,7 +17,7 @@ BUILDCHROOT_PREINSTALL ?= " \
     libc6:${DISTRO_ARCH} \
     crossbuild-essential-${DISTRO_ARCH}"
 
-BUILDCHROOT_PREINSTALL_riscv64 ?= " \
+BUILDCHROOT_PREINSTALL:riscv64 ?= " \
     ${BUILDCHROOT_PREINSTALL_COMMON} \
     libc6:${DISTRO_ARCH} \
     gcc-riscv64-linux-gnu \

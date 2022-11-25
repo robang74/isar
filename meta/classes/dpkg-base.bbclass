@@ -13,7 +13,7 @@ inherit deb-dl-dir
 
 DEPENDS ?= ""
 
-DEPENDS_append_riscv64 = "${@' crossbuild-essential-riscv64' if d.getVar('ISAR_CROSS_COMPILE', True) == '1' and d.getVar('PN') != 'crossbuild-essential-riscv64' else ''}"
+DEPENDS:append:riscv64 = "${@' crossbuild-essential-riscv64' if d.getVar('ISAR_CROSS_COMPILE', True) == '1' and d.getVar('PN') != 'crossbuild-essential-riscv64' else ''}"
 DEB_BUILD_PROFILES ?= ""
 DEB_BUILD_OPTIONS ?= ""
 
@@ -214,7 +214,7 @@ dpkg_undo_mounts() {
     sudo rmdir ${BUILDROOT}
 }
 
-do_prepare_build_append() {
+do_prepare_build:append() {
     # Make a local copy of isar-apt repo that is not affected by other parallel builds
     mkdir -p ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}
     rm -rf ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}/*

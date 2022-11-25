@@ -7,7 +7,7 @@
 
 LICENSE = "gpl-2.0"
 LIC_FILES_CHKSUM = "file://${LAYERDIR_core}/licenses/COPYING.GPLv2;md5=751419260aa954499f7abaabaa882bbe"
-FILESPATH_prepend := "${THISDIR}/files:"
+FILESPATH:prepend := "${THISDIR}/files:"
 SRC_URI = " \
     file://isar-apt-fallback.conf \
     file://locale \
@@ -25,12 +25,12 @@ DISTRO_BOOTSTRAP_KEYFILES = ""
 THIRD_PARTY_APT_KEYFILES = ""
 DEPLOY_ISAR_BOOTSTRAP ?= ""
 DISTRO_BOOTSTRAP_BASE_PACKAGES = "locales"
-DISTRO_BOOTSTRAP_BASE_PACKAGES_append_gnupg = ",gnupg"
-DISTRO_BOOTSTRAP_BASE_PACKAGES_append_https-support = "${@https_support(d)}"
+DISTRO_BOOTSTRAP_BASE_PACKAGES:append:gnupg = ",gnupg"
+DISTRO_BOOTSTRAP_BASE_PACKAGES:append:https-support = "${@https_support(d)}"
 DISTRO_VARS_PREFIX ?= "${@'HOST_' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else ''}"
 BOOTSTRAP_DISTRO = "${@d.getVar('HOST_DISTRO' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else 'DISTRO')}"
 BOOTSTRAP_BASE_DISTRO = "${@d.getVar('HOST_BASE_DISTRO' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else 'BASE_DISTRO')}"
-FILESEXTRAPATHS_append = ":${BBPATH}"
+FILESEXTRAPATHS:append = ":${BBPATH}"
 
 inherit deb-dl-dir
 
@@ -192,7 +192,7 @@ def get_distro_needs_https_support(d):
     else:
         return ""
 
-OVERRIDES_append = ":${@get_distro_needs_https_support(d)}"
+OVERRIDES:append = ":${@get_distro_needs_https_support(d)}"
 
 def get_distro_needs_gpg_support(d):
     if d.getVar("DISTRO_BOOTSTRAP_KEYS") or \
@@ -202,7 +202,7 @@ def get_distro_needs_gpg_support(d):
     else:
         return ""
 
-OVERRIDES_append = ":${@get_distro_needs_gpg_support(d)}"
+OVERRIDES:append = ":${@get_distro_needs_gpg_support(d)}"
 
 def get_distro_source(d):
     return get_distro_primary_source_entry(d)[0]
