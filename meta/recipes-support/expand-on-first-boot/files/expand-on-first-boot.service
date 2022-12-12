@@ -7,7 +7,9 @@
 Description=Expand last partition
 DefaultDependencies=no
 Conflicts=shutdown.target
+Requires=systemd-udevd.service
 After=systemd-remount-fs.service
+After=systemd-udevd.service
 Before=local-fs-pre.target shutdown.target
 ConditionPathIsReadWrite=/etc
 
