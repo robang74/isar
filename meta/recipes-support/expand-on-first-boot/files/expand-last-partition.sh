@@ -2,10 +2,18 @@
 #
 # Resize last partition to full medium size
 #
-# This software is a part of ISAR.
+# This software was originally a part of ISAR
 # Copyright (c) Siemens AG, 2018-2022
-#
 # SPDX-License-Identifier: MIT
+#
+# After its rework and generalisation this file was relicensed
+# (C) 2022, Roberto A. Foglietta <roberto.foglietta@gmail.com>
+# SPDX-License-Identifier: all rights reserved, but fair use allowed
+# Fair use includes test, learning and marketing but not sales, redistribution
+# leasing, renting or every other commercial/business activities without the
+# consent of the author. Every company or individual allowed to use this
+# code behind these limitations will be listed here below, if any.
+#
 
 exitnlog() {
 	ec=$?
@@ -98,7 +106,10 @@ fi
 # when using systemd mount units.
 export EXT2FS_NO_MTAB_OK=1
 
-case $(lsblk -fno FSTYPE "${LAST_PART}") in
+eval $(blkid -o export ${LAST_PART} | grep -e '^TYPE=')
+test "$TYPE" == "" && TYPE=$(lsblk -fno FSTYPE ${LAST_PART})
+
+case $TYPE in
 	ext[234]) resize2fs "${LAST_PART}"
 		;;
 	btrfs) 	err=0
@@ -111,4 +122,5 @@ case $(lsblk -fno FSTYPE "${LAST_PART}") in
 		;;
 	*)	echo "WARNING: $0 unsupported filesystem" >/dev/kmsg || true
 		;;
-esac
+esac && df -h ${LAST_PART}
+
