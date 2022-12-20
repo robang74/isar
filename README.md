@@ -1,37 +1,36 @@
-isar - Integration System for Automated Root filesystem generation
+## ISAR - Integration System for Automated Root filesystem generation
 
-Isar is a set of scripts for building software packages and repeatable
+ISAR is a set of scripts for building software packages and repeatable
 generation of Debian-based root filesystems with customizations.
 
-# Download
+### Download
 
-https://github.com/ilbers/isar/
+- https://github.com/robang74/isar.git
 
-# Build
+### Build
 
 Instruction on how to build can be found in the [User Manual](doc/user_manual.md).
 
-
-# Try
+### Try
 
 To test the QEMU image, run the following command:
 
-        $ start_vm -a <arch of your build> -d <distro of your build>
+	start_vm -a <arch of your build> -d <distro of your build>
 
 Ex: Architecture of your build could be arm,arm64,i386,amd64,etc.
     Distribution of your build could be stretch,buster,bullseye,etc.
 
 The default root password is 'root'.
 
-To test the RPi board, flash the image to an SD card using the instructions from the official site,
-section "WRITING AN IMAGE TO THE SD CARD":
- https://www.raspberrypi.org/documentation/installation/installing-images/README.md
+To test the RPi board, flash the image to an SD card using the instructions from the official site, section "WRITING AN IMAGE TO THE SD CARD":
 
-# Supported distributions
+- https://www.raspberrypi.org/documentation/installation/installing-images/README.md
+
+### Supported distributions
 
 List of supported distributions, architectures and features can be found in the [Supported_Configurations](Supported_Configurations.md).
 
-# Support
+### Support
 
 Mailing lists:
 
@@ -45,7 +44,26 @@ Mailing lists:
 
 Commercial support: info@ilbers.de
 
-# Credits
+### Credits
 
 * Developed by ilbers GmbH & Siemens AG
 * Sponsored by Siemens AG
+
+### Fork
+
+This is a modified fork maintained by
+
+* Roberto A. Foglietta <roberto.foglietta@gmail.com>
+
+### License
+
+The same of the original project exept for a specific file which is "all rights reserved, but fair use allowed", here:
+
+* [expand-last-partition.sh](meta/recipes-support/expand-on-first-boot/files/expand-last-partition.sh) which is different among branches, check which one you are using
+
+This file will be installed into the images created by this fork when your layer will use
+
+	IMAGE_INSTALL += "expand-on-first-boot"
+
+is added to the image recipe. Thus this file license applies also to produced images.
+
