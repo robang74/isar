@@ -14,13 +14,22 @@ export PATH=$PATH:/sbin
 # Go to Isar root
 cd "$(dirname "$0")/.."
 
+for i in virtualenv umoci skopeo reprepro quilt zstd debootstrap qemu-debootstrap; do
+	if ! command -v $i > /dev/null; then
+	    if [ "$updated" != "1" ]; then
+                sudo apt-get update
+	    fi
+	    sudo apt install -y ${i/qemu-debootstrap/qemu-user-static}
+	    updated=1
+	fi
+done
+
 # install avocado in virtualenv in case it is not there already
 if ! command -v avocado > /dev/null; then
-    sudo apt-get update -qq
-    sudo apt-get install -y virtualenv
-    rm -rf /tmp/avocado_venv
-    virtualenv --python python3 /tmp/avocado_venv
-    source /tmp/avocado_venv/bin/activate
+    tmpdir=$(mktemp -p "$TMPDIR" -d avocado_venv.XXXX)
+    trap "rm -rf $tmpdir" EXIT
+    virtualenv --python python3 $tmpdir
+    source $tmpdir/bin/activate
     pip install avocado-framework==96.0
 fi
 
