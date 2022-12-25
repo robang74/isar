@@ -606,8 +606,8 @@ $ vim meta-user/classes/my-image.bbclass
 Specify the command to generate the new image, and optionally image type
 dependencies or required arguments:
 ```
-IMAGE_TYPEDEP_my_image = "ext4"
-IMAGE_CMD_REQUIRED_ARGS_my_image = "MY_ARG"
+IMAGE_TYPEDEP:my_image = "ext4"
+IMAGE_CMD_REQUIRED_ARGS:my_image = "MY_ARG"
 IMAGE_CMD_my_image() {
     INPUT="${PP_DEPLOY}/${IMAGE_FULLNAME}.ext4"
     ${SUDO_CHROOT} my_command ${MY_ARG} -i ${INPUT} -o ${IMAGE_FILE_CHROOT}
@@ -625,7 +625,7 @@ If the code you provide in `IMAGE_CMD` requires the building and/or installation
 of additional packages in the buildchroot, you can specify this:
 ```
 IMAGER_BULID_DEPS_my_image = "my_command"
-IMAGER_INSTALL_my_image = "my_command"
+IMAGER_INSTALL:my_image = "my_command"
 ```
 
 To use your custom image class, add it to `IMAGE_CLASSES` in your machine config:
@@ -1314,8 +1314,8 @@ To the local.conf add:
 
 ```
 IMAGE_PREINSTALL += "docker-ce"
-THIRD_PARTY_APT_KEYS_append = " https://download.docker.com/linux/debian/gpg;md5sum=1afae06b34a13c1b3d9cb61a26285a15"
-DISTRO_APT_SOURCES_append = " conf/distro/docker-buster.list"
+THIRD_PARTY_APT_KEYS:append = " https://download.docker.com/linux/debian/gpg;md5sum=1afae06b34a13c1b3d9cb61a26285a15"
+DISTRO_APT_SOURCES:append = " conf/distro/docker-buster.list"
 ```
 
 And build the corresponding image target:

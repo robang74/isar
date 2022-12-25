@@ -192,7 +192,7 @@ files and patches using bbappend a lot easier.
 
 For example:
 ```
-FILESEXTRAPATHS_prepend := "$THISDIR/files:"
+FILESEXTRAPATHS:prepend := "$THISDIR/files:"
 ```
 
 ### multiconfig build targets were renamed
@@ -372,14 +372,14 @@ Changes when defining custom image classes:
   * Custom image classes that only add a compression step should be removed
     and replaced by an image conversion (see below).
   * Instead of providing a do_image_mytype task, custom image classes should
-    now provide IMAGE_CMD_mytype
-  * Imager dependencies are set as IMAGER_INSTALL_mytype
+    now provide IMAGE_CMD:mytype
+  * Imager dependencies are set as IMAGER_INSTALL:mytype
   * Required arguments (variables that must be set) are modelled by
-    IMAGE_CMD_REQUIRED_ARGS_mytype = "A B C"
+    IMAGE_CMD_REQUIRED_ARGS:mytype = "A B C"
   * When extending an existing image type, instead of inheriting the base
-    image class, IMAGE_TYPEDEP_mytype can be set to define dependencies
+    image class, IMAGE_TYPEDEP:mytype can be set to define dependencies
     between image types.
-  * In the IMAGE_CMD_mytype function:
+  * In the IMAGE_CMD:mytype function:
     - image_do_mounts is inserted automatically
     - a final chown is inserted automatically
     - variables IMAGE_FILE_HOST and IMAGE_FILE_CHROOT are
@@ -389,7 +389,7 @@ Changes when defining custom image classes:
   * Custom image classes need to be added to IMAGE_CLASSES (e.g., in local.conf
     or machine config) so Isar will include them.
 
-New conversions can be added by defining CONVERSION_CMD_type.
+New conversions can be added by defining CONVERSION_CMD:type.
   * Dependencies that need to be installed are given as CONVERSION_DEP_type.
   * New conversions must be added to CONVERSION_TYPES before they can be used.
   * In conversion commands
