@@ -115,7 +115,6 @@ rootfs_configure_apt() {
 EOSUDO
 }
 
-
 ROOTFS_INSTALL_COMMAND += "rootfs_install_pkgs_update"
 rootfs_install_pkgs_update[weight] = "5"
 rootfs_install_pkgs_update[isar-apt-lock] = "acquire-before"
