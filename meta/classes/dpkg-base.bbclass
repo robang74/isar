@@ -124,8 +124,12 @@ do_apt_fetch() {
 addtask apt_fetch
 do_apt_fetch[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
 
+# After the migration to schroot, buildchroot deps are not included anymore by
+# default. However, those projects that continue to need buildchroot can put
+# these two lines in their layer.conf and de-commenting the 2nd line.
+#
 # Add dependency from the correct buildchroot: host or target
-do_apt_fetch[depends] += "${BUILDCHROOT_DEP}"
+# do_apt_fetch[depends] += "${BUILDCHROOT_DEP}"
 
 # Add dependency from the correct schroot: host or target
 do_apt_fetch[depends] += "${SCHROOT_DEP}"
