@@ -295,6 +295,7 @@ python() {
         d.appendVarFlag(task, 'vardeps', ' ' + ' '.join(vardeps))
         d.appendVarFlag(task, 'vardepsexclude', ' ' + ' '.join(vardepsexclude))
         d.appendVarFlag(task, 'dirs', localdata.expand(' ${DEPLOY_DIR_IMAGE}'))
+        d.appendVarFlag(task, 'deptask', ' do_start_imager_session')
         if task_deps:
             d.appendVarFlag(task, 'depends', task_deps)
         bb.build.addtask(task, 'do_image', after, d)
