@@ -26,6 +26,7 @@ SBUILD_CHROOT ?= "${DEBDISTRONAME}-${SCHROOT_USER}-${ISAR_BUILD_UUID}-${@os.getp
 
 SBUILD_CONF_DIR ?= "${SCHROOT_CONF}/${SBUILD_CHROOT}"
 SCHROOT_CONF_FILE ?= "${SCHROOT_CONF}/chroot.d/${SBUILD_CHROOT}"
+SCHROOT_OVERLAY_DIR ?= "${TMPDIR}/schroot-overlay"
 
 SBUILD_CONFIG="${WORKDIR}/sbuild.conf"
 
@@ -54,7 +55,7 @@ root-groups=root,sbuild
 source-root-users=${SCHROOT_USER}
 source-root-groups=root,sbuild
 union-type=overlay
-union-overlay-directory=${TMPDIR}/schroot-overlay
+union-overlay-directory=${SCHROOT_OVERLAY_DIR}
 preserve-environment=true
 EOF
 

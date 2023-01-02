@@ -55,23 +55,28 @@ do_start_imager_session[nostamp] = "1"
 do_start_imager_session[network] = "${TASK_USE_SUDO}"
 python do_start_imager_session() {
     import subprocess
-    bb.build.exec_func("schroot_create_configs", d)
-    bb.build.exec_func("insert_mounts", d)
-    sbuild_chroot = d.getVar("SBUILD_CHROOT", True)
-    session_id = d.getVar("IMAGER_SCHROOT_SESSION_ID", True)
-    try:
-        if subprocess.run("schroot -l --all-sessions | grep %s" % session_id, shell=True).returncode:
-            subprocess.run("schroot -b -c %s -n %s" % (sbuild_chroot, session_id), shell=True, check=True)
-            bb.debug(2, "Open schroot session %s" % session_id)
-        else:
-            subprocess.run("schroot --recover-session -c %s" % session_id, shell=True, check=True)
-            bb.debug(2, "Reuse schroot session %s" % session_id)
-        d.setVar("SCHROOT_OPEN_SESSION_ID", session_id)
-    except subprocess.CalledProcessError as err:
-        subprocess.run("schroot -e -c %s" % session_id, shell=True)
-        bb.build.exec_func("remove_mounts", d)
-        bb.build.exec_func("schroot_delete_configs", d)
-        bb.fatal("Could not create schroot session: %s" % err.output.decode('utf-8') if err.output else "")
+    attempts=0
+    while attempts < 2:
+        attempts+=1
+        bb.build.exec_func("schroot_create_configs", d)
+        bb.build.exec_func("insert_mounts", d)
+        sbuild_chroot = d.getVar("SBUILD_CHROOT", True)
+        session_id = d.getVar("IMAGER_SCHROOT_SESSION_ID", True)
+        try:
+            bb.debug(2, "Opening schroot session %s" % sbuild_chroot)
+            id = subprocess.run("schroot -d / -b -c %s -n %s -- printenv -0 SCHROOT_ALIAS_NAME"
+                % (sbuild_chroot, session_id), shell=True, check=True)
+            attempts=2
+        except subprocess.CalledProcessError as err:
+            try:
+                bb.debug(2, "Reusing schroot session %s" % sbuild_chroot)
+                id = subprocess.run("schroot -d / -r -c %s -- printenv -0 SCHROOT_ALIAS_NAME"
+                    % session_id, shell=True, check=True)
+            except subprocess.CalledProcessError as err:
+                bb.debug(2, "Closing schroot session %s (%s)" % (sbuild_chroot, session_id))
+                bb.build.exec_func("stop_schroot_session", d)
+        if 'id' in locals():
+            d.setVar("SBUILD_CHROOT", id)
 }
 addtask start_imager_session before do_stop_imager_session after do_rootfs_finalize
 
@@ -79,20 +84,7 @@ do_stop_imager_session[depends] = "${SCHROOT_DEP}"
 do_stop_imager_session[nostamp] = "1"
 do_stop_imager_session[network] = "${TASK_USE_SUDO}"
 python do_stop_imager_session() {
-    import subprocess
-    session_id = d.getVar("IMAGER_SCHROOT_SESSION_ID", True)
-    try:
-        id = subprocess.run("schroot -d / -r -c %s -- printenv -0 SCHROOT_ALIAS_NAME" % session_id,
-                            shell=True, check=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
-        bb.debug(2, "Close schroot session %s (%s)" % (session_id, id))
-        subprocess.run("schroot -e -c %s" % session_id, shell=True, check=True)
-    except subprocess.CalledProcessError as err:
-        bb.error("Could not close schroot session %s: %s" % (session_id, err.output.decode('utf-8')) if err.output else "")
-    finally:
-        if 'id' in locals():
-            d.setVar("SBUILD_CHROOT", id)
-            bb.build.exec_func("remove_mounts", d)
-            bb.build.exec_func("schroot_delete_configs", d)
+    bb.build.exec_func("stop_schroot_session", d)
 }
 addtask stop_imager_session before do_deploy after do_image
 

@@ -32,7 +32,6 @@ python task_started() {
 task_started[eventmask] = "bb.build.TaskStarted"
 
 addhandler task_failed
-
 python task_failed() {
     # Avoid false positives if a second target depends on this task and retries
     # the execution after the first failure.
@@ -41,6 +40,25 @@ python task_failed() {
 task_failed[eventmask] = "bb.build.TaskFailed"
 
 addhandler build_completed
+
+python stop_schroot_session() {
+    session_id = d.getVar("IMAGER_SCHROOT_SESSION_ID", True)
+    import subprocess
+    try:
+        id = subprocess.run("schroot -d / -r -c %s -- printenv -0 SCHROOT_ALIAS_NAME" % session_id,
+                            shell=True, check=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        bb.debug(2, "Close schroot session %s (%s)" % (session_id, id))
+        subprocess.run("schroot -e -c %s" % session_id, shell=True, check=True)
+        d.setVar("SBUILD_CHROOT", id)
+        bb.build.exec_func("remove_mounts", d)
+        bb.build.exec_func("schroot_delete_configs", d)
+    except subprocess.CalledProcessError as err:
+        bb.warn("Failed to close schroot session, removing %s: %s"
+            % (session_id, err.output.decode('utf-8').str if err.output else ""))
+        udir = d.getVar("SCHROOT_OVERLAY_DIR", True)
+        subprocess.run("sudo rm -rf --one-file-system %s/%s /var/lib/schroot/session/%s"
+            % (udir, session_id, session_id), shell=True)
+}
 
 python build_completed() {
     import subprocess
@@ -56,16 +74,8 @@ python build_completed() {
                               shell=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
     for line in sessions.splitlines():
         session_id = line.split(':', 1)[1]
-        bb.debug(1, 'Closing imager session %s' % session_id)
-        id = subprocess.run("schroot -d / -r -c %s -- printenv -0 SCHROOT_ALIAS_NAME" % session_id,
-                            shell=True, check=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
-        if id:
-            subprocess.run('schroot --recover-session -c %s' % session_id, shell=True, check=True)
-            subprocess.run('schroot -e -c %s' % session_id, shell=True, check=True)
-        if 'id' in locals():
-            d.setVar('SBUILD_CHROOT', id)
-            bb.build.exec_func('remove_mounts', d)
-            bb.build.exec_func('schroot_delete_configs', d)
+        bb.debug(2, 'Closing imager session %s' % session_id)
+        bb.build.exec_func("stop_schroot_session", d)
 
     with open('/proc/mounts') as f:
         for line in f.readlines():
