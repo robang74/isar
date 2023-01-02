@@ -31,10 +31,18 @@ SBUILD_CONFIG="${WORKDIR}/sbuild.conf"
 
 schroot_create_configs() {
     mkdir -p "${TMPDIR}/schroot-overlay"
-    sudo -s <<'EOSUDO'
+
+    conf_dir="${SBUILD_CONF_DIR}"
+    conf_file="${SCHROOT_CONF_FILE}"
+    if [ -n "$1" ]; then
+        conf_dir="${SCHROOT_CONF}/${1}"
+        conf_file="${SCHROOT_CONF}/chroot.d/${1}"
+    fi
+    export conf_dir conf_file
+    sudo -E -s <<'EOSUDO'
         set -e
 
-        cat << EOF > "${SCHROOT_CONF_FILE}"
+        cat << EOF > "${conf_file}"
 [${SBUILD_CHROOT}]
 type=directory
 directory=${SCHROOT_DIR}
@@ -51,8 +59,8 @@ preserve-environment=true
 EOF
 
         # Prepare mount points
-        cp -rf "${SCHROOT_CONF}/sbuild" "${SBUILD_CONF_DIR}"
-        sbuild_fstab="${SBUILD_CONF_DIR}/fstab"
+        cp -rf "${SCHROOT_CONF}/sbuild" "${conf_dir}"
+        sbuild_fstab="${conf_dir}/fstab"
 
         fstab_baseapt="${REPO_BASE_DIR} /base-apt none rw,bind 0 0"
         grep -qxF "${fstab_baseapt}" ${sbuild_fstab} || echo "${fstab_baseapt}" >> ${sbuild_fstab}
@@ -68,12 +76,19 @@ EOSUDO
 }
 
 schroot_delete_configs() {
-    sudo -s <<'EOSUDO'
+    conf_dir="${SBUILD_CONF_DIR}"
+    conf_file="${SCHROOT_CONF_FILE}"
+    if [ -n "$1" ]; then
+        conf_dir="${SCHROOT_CONF}/${1}"
+        conf_file="${SCHROOT_CONF}/chroot.d/${1}"
+    fi
+    export conf_dir conf_file
+    sudo -E -s <<'EOSUDO'
         set -e
-        if [ -d "${SBUILD_CONF_DIR}" ]; then
-            rm -rf "${SBUILD_CONF_DIR}"
+        if [ -d "${conf_dir}" ]; then
+            rm -rf "${conf_dir}"
         fi
-        rm -f "${SCHROOT_CONF_FILE}"
+        rm -f "${conf_file}"
 EOSUDO
 }
 
@@ -107,22 +122,32 @@ sbuild_export() {
 }
 
 insert_mounts() {
-    sudo -s <<'EOSUDO'
+    conf_dir="${SBUILD_CONF_DIR}"
+    if [ -n "$1" ]; then
+        conf_dir="${SCHROOT_CONF}/${1}"
+    fi
+    export conf_dir
+    sudo -E -s <<'EOSUDO'
         set -e
         for mp in ${SCHROOT_MOUNTS}; do
             FSTAB_LINE="${mp%%:*} ${mp#*:} none rw,bind 0 0"
-            grep -qxF "${FSTAB_LINE}" ${SBUILD_CONF_DIR}/fstab || \
-                echo "${FSTAB_LINE}" >> ${SBUILD_CONF_DIR}/fstab
+            grep -qxF "${FSTAB_LINE}" ${conf_dir}/fstab || \
+                echo "${FSTAB_LINE}" >> ${conf_dir}/fstab
         done
 EOSUDO
 }
 
 remove_mounts() {
-    sudo -s <<'EOSUDO'
+    conf_dir="${SBUILD_CONF_DIR}"
+    if [ -n "$1" ]; then
+        conf_dir="${SCHROOT_CONF}/${1}"
+    fi
+    export conf_dir
+    sudo -E -s <<'EOSUDO'
         set -e
         for mp in ${SCHROOT_MOUNTS}; do
             FSTAB_LINE="${mp%%:*} ${mp#*:} none rw,bind 0 0"
-            sed -i "\|${FSTAB_LINE}|d" ${SBUILD_CONF_DIR}/fstab
+            sed -i "\|${FSTAB_LINE}|d" ${conf_dir}/fstab
         done
 EOSUDO
 }
