@@ -70,6 +70,7 @@ ISAR_RELEASE_CMD_DEFAULT = "git -C ${LAYERDIR_core} describe --tags --dirty --ma
 ISAR_RELEASE_CMD ?= "${ISAR_RELEASE_CMD_DEFAULT}"
 
 image_do_mounts() {
+    set -x
     sudo flock ${MOUNT_LOCKFILE} -c ' \
         mkdir -p "${BUILDROOT_DEPLOY}" "${BUILDROOT_ROOTFS}" "${BUILDROOT_WORK}"
         mount --bind "${DEPLOY_DIR_IMAGE}" "${BUILDROOT_DEPLOY}"
@@ -157,7 +158,7 @@ inherit ${IMGCLASSES}
 # convenience variables to be used by CMDs
 IMAGE_FILE_HOST = "${DEPLOY_DIR_IMAGE}/${IMAGE_FULLNAME}.${type}"
 IMAGE_FILE_CHROOT = "${PP_DEPLOY}/${IMAGE_FULLNAME}.${type}"
-SUDO_CHROOT = "sudo chroot ${BUILDCHROOT_DIR}"
+SUDO_CHROOT = "imager_run -d ${PP_ROOTFS} -u root --"
 
 # hook up IMAGE_CMD_*
 python() {
@@ -229,8 +230,7 @@ python() {
             imager_build_deps.add(dep)
 
         # construct image command
-        cmds.append('\timage_do_mounts')
-        image_cmd = localdata.getVar('IMAGE_CMD_' + bt_clean)
+        image_cmd = localdata.getVar('IMAGE_CMD:' + bt_clean)
         if image_cmd:
             localdata.setVar('type', bt)
             cmds.append(localdata.expand(image_cmd))
