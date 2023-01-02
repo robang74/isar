@@ -51,6 +51,22 @@ python build_completed() {
 
     basepath = tmpdir + '/work/'
 
+    build_uuid = d.getVar('ISAR_BUILD_UUID', True)
+    sessions = subprocess.run('schroot -l --all-sessions | grep isar | grep %s' % build_uuid,
+                              shell=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+    for line in sessions.splitlines():
+        session_id = line.split(':', 1)[1]
+        bb.debug(1, 'Closing imager session %s' % session_id)
+        id = subprocess.run("schroot -d / -r -c %s -- printenv -0 SCHROOT_ALIAS_NAME" % session_id,
+                            shell=True, check=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        if id:
+            subprocess.run('schroot --recover-session -c %s' % session_id, shell=True, check=True)
+            subprocess.run('schroot -e -c %s' % session_id, shell=True, check=True)
+        if 'id' in locals():
+            d.setVar('SBUILD_CHROOT', id)
+            bb.build.exec_func('remove_mounts', d)
+            bb.build.exec_func('schroot_delete_configs', d)
+
     with open('/proc/mounts') as f:
         for line in f.readlines():
             if basepath in line:
