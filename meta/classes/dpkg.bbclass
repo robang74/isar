@@ -3,6 +3,8 @@
 
 inherit dpkg-base
 
+ISAR_CROSS_COMPILE ?= "0"
+
 PACKAGE_ARCH ?= "${DISTRO_ARCH}"
 
 DPKG_PREBUILD_ENV_FILE="${WORKDIR}/dpkg_prebuild.env"
