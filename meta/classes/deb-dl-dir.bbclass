@@ -1,6 +1,8 @@
 # This software is a part of ISAR.
 # Copyright (C) 2020 Siemens AG
 #
+# Partial rework by Roberto A. Foglietta <roberto.foglietta@gmail.com>
+#
 # SPDX-License-Identifier: MIT
 
 inherit repository
@@ -52,7 +54,6 @@ debsrc_download() {
 
     ( flock 9
     set -e
-    printenv | grep -q BB_VERBOSE_LOGS && set -x
     find "${rootfs}/var/cache/apt/archives/" -maxdepth 1 -type f -iname '*\.deb' | while read package; do
         is_not_part_of_current_build "${package}" && continue
         # Get source package name if available, fallback to package name
@@ -76,39 +77,48 @@ debsrc_download() {
     debsrc_undo_mounts "${rootfs}"
 }
 
+##### REWORK #####
+
 deb_dl_dir_import() {
-    export pc="${DEBDIR}/${2}"
-    export rootfs="${1}"
-    sudo mkdir -p "${rootfs}"/var/cache/apt/archives/
-    [ ! -d "${pc}" ] && return 0
-    flock -s "${pc}".lock -c '
-        set -e
-        printenv | grep -q BB_VERBOSE_LOGS && set -x
-        sudo find "${pc}" -type f -iname "*\.deb" -exec \
-            ln -Pf -t "${rootfs}"/var/cache/apt/archives/ {} + 2>/dev/null || :
-    '
+    nol="${3}"
+    apc="${DEBDIR}/${2}"
+    adn="${1}/var/cache/apt/archives/"
+    bdn="${1}/var/lib/apt/lists/"
+    bpc="${DEBDIR}/lists/${2}"
+    export adn bdn apc bpc nol
+    flock -s "${DEBDIR}".lock -c 'sudo -Es << EOSUDO
+        mkdir -p "${adn}" && test -d "${adn}"
+        find "${apc}" -maxdepth 1 -type f -iname \*.deb \
+            -exec ln -Pf -t "${adn}" {} + 2>/dev/null
+
+        test "${nol}" = "nolists" && exit 0
+
+        mkdir -p "${bdn}" && test -d "${bdn}"
+        find "${bpc}" -maxdepth 1 -type f -not -name lock -not -name \
+            _isar-apt\* -exec ln -Pf -t "${bdn}" {} + 2>/dev/null
+        chown -R root:root "${bdn}"
+EOSUDO'
 }
 
 deb_dl_dir_export() {
-    export pc="${DEBDIR}/${2}"
-    export rootfs="${1}"
-    mkdir -p "${pc}"
-    flock "${pc}".lock -c '
-        set -e
-        printenv | grep -q BB_VERBOSE_LOGS && set -x
-        find "${rootfs}"/var/cache/apt/archives/ \
-            -maxdepth 1 -type f -iname '*\.deb' |\
-        while read p; do
-            # skip files from a previous export
-            [ -e "${pc}/${p##*/}" ] && continue
-            # can not reuse bitbake function here, this is basically
-            # "repo_contains_package"
-            package=$(find "${REPO_ISAR_DIR}"/"${DISTRO}" -name ${p##*/})
-            if [ -n "$package" ]; then
-                cmp --silent "$package" "$p" && continue
-            fi
-            sudo ln -P "${p}" "${pc}" 2>/dev/null || :
-        done
-        sudo chown -R $(id -u):$(id -g) "${pc}"
-    '
+    set -e
+    nol="${3}"
+    apc="${DEBDIR}/${2}"
+    adn="${1}/var/cache/apt/archives/"
+    bdn="${1}/var/lib/apt/lists/"
+    bpc="${DEBDIR}/lists/${2}"
+    export adn bdn apc bpc nol
+    flock "${DEBDIR}".lock -c 'sudo -Es << EOSUDO
+        mkdir -p "${apc}" && test -d "${apc}"
+        find "${adn}" -maxdepth 1 -type f -iname \*.deb \
+            -exec ln -P -t "${apc}" {} + 2>/dev/null
+        chown -R $(id -u):$(id -g) "${apc}"
+
+        test "${nol}" = "nolists" && exit 0
+
+        mkdir -p "${bpc}" && test -d "${bpc}"
+        find "${bdn}" -maxdepth 1 -type f -not -name lock -not -name \
+            _isar-apt\* -exec ln -Pf -t "${bpc}" {} + 2>/dev/null
+        chown -R $(id -u):$(id -g) "${bpc}"
+EOSUDO'
 }
