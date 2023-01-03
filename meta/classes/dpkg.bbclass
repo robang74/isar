@@ -23,6 +23,8 @@ do_prepare_build_append() {
     env > ${DPKG_PREBUILD_ENV_FILE}
 }
 
+DPKG_SBUILD_EXTRA_ARGS ?= ""
+
 # Build package from sources using build script
 dpkg_runbuild[vardepsexclude] += "${SBUILD_PASSTHROUGH_ADDITIONS}"
 dpkg_runbuild() {
@@ -112,7 +114,7 @@ dpkg_runbuild() {
         --finished-build-commands="rm -f ${deb_dir}/sbuild-build-depends-main-dummy_*.deb" \
         --finished-build-commands="cp -n --no-preserve=owner ${deb_dir}/*.deb -t ${ext_deb_dir}/ || :" \
         --finished-build-commands="cp /var/log/dpkg.log ${ext_root}/dpkg_partial.log" \
-        --debbuildopts="--source-option=-I" \
+        --debbuildopts="--source-option=-I" ${DPKG_SBUILD_EXTRA_ARGS} \
         --build-dir=${WORKDIR} --dist="isar" ${DSC_FILE}
 
     sbuild_dpkg_log_export "${WORKDIR}/rootfs/dpkg_partial.log"
