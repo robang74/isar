@@ -169,24 +169,26 @@ generate_wic_image() {
         fi
 
         export PATH="${BITBAKEDIR}/bin:$PATH"
+        wicdir="${PP_DEPLOY}/${IMAGE_FULLNAME}.wic.dir/"
 
         "${SCRIPTSDIR}"/wic create "${WKS_FULL_PATH}" \
             --vars "${STAGING_DIR}/${MACHINE}/imgdata/" \
-            -o "/tmp/${IMAGE_FULLNAME}.wic/" \
-            --bmap \
+            -o "${wicdir}" --bmap \
             -e "${IMAGE_BASENAME}" ${WIC_CREATE_EXTRA_ARGS}
 
-        WIC_DIRECT=$(ls -t -1 /tmp/${IMAGE_FULLNAME}.wic/*.direct | head -1)
+        WIC_DIRECT=$(ls -t -1 ${wicdir}/*.direct | head -1)
         mv -f ${WIC_DIRECT} ${PP_DEPLOY}/${IMAGE_FULLNAME}.wic
         mv -f ${WIC_DIRECT}.bmap ${PP_DEPLOY}/${IMAGE_FULLNAME}.wic.bmap
         # deploy partition files if requested (ending with .p<x>)
         if [ "${WIC_DEPLOY_PARTITIONS}" -eq "1" ]; then
             # locate *.direct.p<x> partition files
-            find "/tmp/${IMAGE_FULLNAME}.wic/" -type f -regextype sed -regex ".*\.direct.*\.p[0-9]\{1,\}" | while read f; do
-                suffix=$(basename $f | sed 's/.*\.direct\(.*\)/\1/')
-                mv -f ${f} ${PP_DEPLOY}/${IMAGE_FULLNAME}.wic${suffix}
-            done
+            find "${wicdir}" -type f -regextype sed -regex ".*\.direct.*\.p[0-9]\{1,\}" |\
+                while read f; do
+                    suffix=$(basename $f | sed 's/.*\.direct\(.*\)/\1/')
+                    mv -f ${f} ${PP_DEPLOY}/${IMAGE_FULLNAME}.wic${suffix}
+                done
         fi
+        rm -rf "${wicdir}"
 EOSUDO
 
     sudo chown -R $(stat -c "%U" ${LAYERDIR_core}) ${LAYERDIR_core} ${LAYERDIR_isar} ${SCRIPTSDIR} || true
