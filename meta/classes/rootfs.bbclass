@@ -204,7 +204,8 @@ python do_rootfs_install() {
         bb.build.exec_func(cmd, d)
 
         if (d.getVarFlag(cmd, 'isar-apt-lock') or "") == "release-after":
-            bb.utils.unlockfile(lock)
+            if 'lock' in locals():
+                bb.utils.unlockfile(lock)
     progress_reporter.finish()
 }
 addtask rootfs_install before do_rootfs_postprocess after do_unpack
