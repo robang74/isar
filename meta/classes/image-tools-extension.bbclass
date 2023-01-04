@@ -11,6 +11,8 @@ IMAGER_INSTALL ??= ""
 IMAGER_BUILD_DEPS ??= ""
 DEPENDS += "${IMAGER_BUILD_DEPS}"
 
+ISAR_CROSS_COMPILE ?= "0"
+
 do_install_imager_deps[depends] = "${BUILDCHROOT_DEP} isar-apt:do_cache_config"
 do_install_imager_deps[deptask] = "do_deploy_deb"
 do_install_imager_deps[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
