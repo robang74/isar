@@ -1,8 +1,30 @@
+RE-WORKED LICENSE
+
+Almost all the files are under MIT license or GPLv2/2+ and the others are in the public domain due to their simplicity and/or standardisation like system configuration. However the composition of these files is protected by the GPLv3 license (since January 4th, 2023).
+
+* meta/licenses/COPYING.GPLv2 (GPLv3)
+
+This means that everyone can use a single MIT licensed file or a part of it under the MIT license terms. Instead, using two of them or two parts of them implies that you are using a subset of this collection. Thus a derived work of this collection which is licensed under the GPLv3 also.
+
+The GPLv3 license applies to the composition unless you are the original copyright owner or the author of a specific unmodified file. This means that every one that can legally claim rights about the original files maintains its rights, obviously. So, it should not need to complain with the GPLv3 license applied to the composition. Unless, the composition is adopted for the part which had not the rights, before.
+
+An exception is this specific file which is "all rights reserved, but fair use allowed", here:
+
+* meta/recipes-support/expand-on-first-boot/files/expand-last-partition.sh which is different among branches, check which one you are using
+
+This file will be installed into the images created by this fork when your layer will use
+
+    IMAGE_INSTALL += "expand-on-first-boot"
+
+is added to the image recipe. Thus this file license applies also to produced images.
+
+ORIGINAL LICENSE
+
 Different components of isar are under different licenses (a mix of MIT and
 GPLv2). Please see:
 
-meta/licenses/COPYING.GPLv2 (GPLv2)
-meta/licenses/COPYING.MIT (MIT)
+* meta/licenses/COPYING.GPLv2 (GPLv2)
+* meta/licenses/COPYING.MIT (MIT)
 
 All metadata is MIT licensed unless otherwise stated. Source code
 included in tree for individual recipes is under the LICENSE stated in
