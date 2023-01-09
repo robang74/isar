@@ -1,5 +1,125 @@
-BUILDING OPTIMISATION CHANGELOG
--------------------------------
+BENCHMARK SUITE
+===============
+
+This function is used to make a comparison about the improvement:
+
+* check-build-perform.sh [target]
+
+
+HOW TO TEST THE PERFORMANCES
+============================
+
+NOTE: these repositories are public PoC and are not suitable for business as-is
+
+    git clone https://github.com/robang74/isar-nvidia-debian
+
+    cd isar-nvidia-debian
+
+    git switch devel2       # necessary, default branch is devel
+
+    ./build.sh isar         #
+    cd isar                 #
+    git switch evo2         # optional, it should be the default branch
+    cd ..                   #
+
+    ./build.sh complete
+
+This command will take some time to download all the components and the .deb
+packages that are needed. It also requires some system / container components
+if the machine was not prepared for this kind of building.
+
+    ./check-build-perform.sh basic-os
+
+    ./check-build-perform.sh complete
+
+These two commands deliver the results of the performances achieved. Each of
+them will do 2 tests: a fresh one and the second one leveraging the cache.
+
+To compare with the original version modify the kas.yml but a quick way is:
+
+    cd isar
+    git switch next
+    touch KEEP.THIS
+    cd ..
+
+The 'next' is as nearer to ilbers:next as possible but it works immediately.
+
+WARNING: the first build downloads software from external repositories outside
+         my control and - rarely, sometimes they change in such a way they
+         break the building. If it happens, do not hesitate to contact me.
+
+PERFORMANCES SHOWCASES
+======================
+
+Compared to the original the performances increase is impressive, in both cases:
+
+          original          roban74:evo2
+       ------------ basic-os -------------- ==============
+       43954 Mb (max)   |  3498 Mb (max)    12.57x  16.07x
+       26548 Mb (rest)  |  2588 Mb (rest)   10.26x  14.50x
+        3741 Mb (deb)   |  3417 Mb (deb)      -
+         820 Mb (wic)   |   814 Mb (wic)      -
+       11789 Mb (cache) |   273 Mb (cache)  43.18x
+       time: 8m33s      | time: 3m09s        2.71x
+
+          original          roban74:evo2
+       ------------ complete ------------- ===============
+       52507 Mb (max)   | 28606 Mb (max)     1.84x   2.23x
+       43311 Mb (rest)  | 19413 Mb (rest)    2.23x   3.33x
+        3741 Mb (deb)   |  3417 Mb (deb)      -
+        9159 Mb (wic)   |  9155 Mb (wic)      -
+       11799 Mb (cache) |   283 Mb (cache)  41.69x
+       time: 20m13s     | time: 11m44s       1.72x
+
+Considering that the local .deb cache growing with the time because new updates
+will be added, and comparing the performance gains between the basic-os and the
+complete image, we can say that on the long run also the complete case will
+reach the 2x of performance at least in time building.
+
+IMAGE CACHE PERFORMANCES
+========================
+
+The test suite has been modified because now there are two cases for each
+configuration: fresh build and cached rebuild.
+
+        devel2 (public) + npriv5 (private)
+       ------------------------------------
+            fresh              cache
+       ------------ complete -------------- ==============
+       32938 Mb (max)   | 28217 Mb (max)     1.17x   1.25x
+       23707 Mb (rest)  | 18990 Mb (rest)    1.25x   1.48x
+        3537 Mb (deb)   |  3537 Mb (deb)      -
+        9143 Mb (wic)   |  9139 Mb (wic)      -
+        4650 Mb (cache) |  4650 Mb (cache)    -
+       time: 15m15s     | time:  4m37s       3.30x
+       ------------------------------------
+                    evo2, time: 10m9s        1.50x
+
+The main reason to use image cache is to speed-up the rebuilds but the ratio
+depends on the ability of ISAR to deal with files, in fact, using 'evo2' the
+public branch parent of 'npriv5' the gain using the cache is quite limited.
+
+Instead with npriv5, the improvement in using the image cache makes it suitable
+also for being used in large projects. Further improvements are still possible.
+
+         devel2 (public) + next (public)
+       ------------------------------------
+          original    cache    nvpriv5
+       ------------ complete -------------- ==============
+       39651 Mb (max)   | 28217 Mb (max)     1.41x   1.60x
+       30461 Mb (rest)  | 18990 Mb (rest)    1.60x   2.16x
+        3537 Mb (deb)   |  3537 Mb (deb)      -
+        9155 Mb (wic)   |  9139 Mb (wic)      -
+       15283 Mb (cache) |  4650 Mb (cache)    -
+       time:  9m31s     | time:  4m37s       2.06x
+
+Without any surprise the npriv5 performs 2x better than the original version
+also when the image cache is enabled on a large project.
+
+CHANGES LOG
+===========
+
+This below are reported some results about the various milestones developed.
 
 Building process optimisation starts with a bugfix in do_copy_boot_files (tag: build-optim)
 and includes 12 different commits on the branch 'evo' (commit hashes could change, rebase):
@@ -19,59 +139,7 @@ and includes 12 different commits on the branch 'evo' (commit hashes could chang
 
 To verify the building process optimisation in numeric terms, a test has been developed.
 
-
-Test Suite
-----------
-
-This functions were used to make a comparison about the improvement:
-
-	function fds() {
-	    df -m / | grep /dev | tr -s ' ' | cut -d' ' -f4;
-	}
-
-	function ms() {
-	    du -ms "$@" 2>/dev/null | cut -f1
-	}
-
-	function chkfds() {
-	    st=$(fds); mx=0;
-	    while sleep 1; do ct=$[st-$(fds)];
-	    if [ $ct -gt $mx ]; then printf "%5s Mb\n" $ct; mx=$ct; fi;
-	    done; ct=$[st-$(fds)];
-	    printf "%5s Mb (max)\n" $mx;
-	    printf "%5s Mb (rest)\n" $ct;
-	    printf "%5s Mb (deb)\n" $(ms build/downloads/deb);
-	    printf "%5s Mb (wic)\n" $(ms build/tmp/deploy/images/*/*.wic);
-	    printf "%5s Mb (cache)\n" $(ms build/sstate-cache);
-	}
-
-	chkfds & read; killall sleep; sleep 1; echo
-
-on another terminal:
-
-	clean all
-	build basic-os
-
-when complete press a key in the previous terminal to collect data:
-
-	    original           patch 1
-	------------ basic-os --------------
-	43954 Mb (max)   |  8657 Mb (max)
-	26548 Mb (rest)  |  4118 Mb (rest)
-	 3741 Mb (deb)   |  3741 Mb (deb)
-	  820 Mb (wic)   |   820 Mb (wic)
-	11789 Mb (cache) |   579 Mb (cache)
-	time: 8m33s      | time: 4m34s
-
-After the changes the max disk size used is 2x downloaded debian packages
-plus the size of the wic image and the debootstrap cache:
-
-	2 x 3741 + 820 + 579 = 8881 > 8654 MB
-
-About the building time, it has been reduced by 2x times.
-
-
-Improvements
+Performances
 ------------
 
 	    patch 1         patches 1,2,3
@@ -211,3 +279,73 @@ Here summuarised for the two opposite cases, the new results:
        time: 20m13s     | time: 11m57s      1.69x
 
 
+VirtualBox comparison
+---------------------
+
+Running the performances test in a VirtualBox with 2 threads CPU and 2GB of RAM:
+
+          vm:next             vm:evo2
+       ------------ basic-os -------------- ==============
+       30947 Mb (max)   |  3537 Mb (max)     8.75x  11.09x
+       24384 Mb (rest)  |  2559 Mb (rest)    9.53x  13.55x
+        3496 Mb (deb)   |  3496 Mb (deb)      -
+         814 Mb (wic)   |   820 Mb (wic)      -
+       10752 Mb (cache) |   233 Mb (cache)  46.15x
+       time: 12m34s     | time: 3m09s        3.99x
+
+          vm:next             vm:evo2
+       ------------ complete ------------- ===============
+       50350 Mb (max)   | 28652 Mb (max)     1.76x   2.11x
+       41159 Mb (rest)  | 19333 Mb (rest)    2.13x   3.15x
+        3496 Mb (deb)   |  3496 Mb (deb)      -
+        9155 Mb (wic)   |  9161 Mb (wic)      -
+       10762 Mb (cache) |   243 Mb (cache)  44.29x
+       time: 22m47s     | time: 11m44s       1.94x
+
+The build time improved even more than a real machine with 8 threads CPU and
+8GB of real RAM.
+
+Rebase in 'rebnext'
+-------------------
+
+Due to the great amount of changes, it was required to do a cherry-picking and
+rebase process in order to obtaine a more suitable set of patches. This process
+is still undergonig. This is the results from the 1st round of code assesment:
+
+From these numbers the first thing we notice is that the size of the deb cache
+does not matter at all because 10x more is not slower at all. This makes per-
+fectly sense because linking 385 or 1260 does not make such a difference.
+
+          full debs           minimal           rebnext
+       ------------ basic-os -------------- ==============
+        3498 Mb (max)   |  3489 Mb (max)     1.00x   1.00x
+        2588 Mb (rest)  |  2587 Mb (rest)    1.00x   1.00x
+        3417 Mb (deb)   |   364 Mb (deb)     9.39x
+         814 Mb (wic)   |   814 Mb (wic)      -
+         273 Mb (cache) |   273 Mb (cache)   1.00x
+       time: 3m09s      | time: 3m10s        2.58x
+
+Compared to the original the performances increase is impressive, in both cases:
+
+          original           cherries + schroot + rebase
+       ------------ basic-os -------------- ==============
+       43954 Mb (max)   |  3498 Mb (max)    12.57x  16.07x
+       26548 Mb (rest)  |  2588 Mb (rest)   10.26x  14.50x
+        3741 Mb (deb)   |  3417 Mb (deb)      -
+         820 Mb (wic)   |   814 Mb (wic)      -
+       11789 Mb (cache) |   273 Mb (cache)  43.18x
+       time: 8m33s      | time: 3m09s        2.71x
+
+          original           cherries + schroot + rebase
+       ------------ complete ------------- ===============
+       52507 Mb (max)   | 28606 Mb (max)     1.84x   2.23x
+       43311 Mb (rest)  | 19413 Mb (rest)    2.23x   3.33x
+        3741 Mb (deb)   |  3417 Mb (deb)      -
+        9159 Mb (wic)   |  9155 Mb (wic)      -
+       11799 Mb (cache) |   283 Mb (cache)  41.69x
+       time: 20m13s     | time: 11m44s       1.72x
+
+Considering that the local .deb cache growing with the time because new updates
+will be added, and comparing the performance gains between the basic-os and the
+complete image, we can say that on the long run also the complete case will
+reach the 2x of performance at least in time building.
