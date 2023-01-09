@@ -25,18 +25,34 @@ Test Suite
 
 This functions were used to make a comparison about the improvement:
 
-* check-build-perform.sh
+* check-build-perform.sh [target]
 
-executing the above script in a second terminal and in the top folder
-of your project while on another terminal:
+NOTE: these repositories are public PoC and are not suitable for business as-is
 
-	1$ clean all
-    2$ ./check-build-perform.sh
-	1$ build basic-os
+    git clone https://github.com/robang74/isar-nvidia-debian
 
-when complete press a key in the previous terminal to collect data:
+    cd isar-nvidia-debian
 
-	    original           patch 1
+    git switch devel        # optional, it should be the default branch
+
+    ./build.sh isar         #
+    cd isar                 #
+    git switch evo2         # optional, it should be the default branch
+    cd ..                   #
+
+    ./build.sh complete
+
+This command will take some time to download all the components and the .deb
+packages that are needed. It also requires some system / container components
+if the machine was not prepared for this kind of building.
+
+    ./check-build-perform.sh basic-os
+
+    ./check-build-perform.sh complete
+
+These two commands deliver the results of the performances achieved:
+
+	    original           patched
 	------------ basic-os --------------
 	43954 Mb (max)   |  8657 Mb (max)
 	26548 Mb (rest)  |  4118 Mb (rest)
@@ -45,12 +61,19 @@ when complete press a key in the previous terminal to collect data:
 	11789 Mb (cache) |   579 Mb (cache)
 	time: 8m33s      | time: 4m34s
 
-After the changes the max disk size used is 2x downloaded debian packages
-plus the size of the wic image and the debootstrap cache:
+To compare with the original version modify the kas.yml but a quick way is:
 
-	2 x 3741 + 820 + 579 = 8881 > 8654 MB
+    cd isar
+    git switch next
+    touch KEEP.THIS
+    cd ..
 
-About the building time, it has been reduced by 2x times.
+The 'next' is as nearer to ilbers:next as possible but it works immediately.
+
+WARNING: the first build downloads software from external repositories outside
+         my control and - rarely, sometimes they change in such a way they
+         break the building. If it happens, do not hesitate to contact me at
+         Roberto A. Foglietta <roberto.foglietta@gmail.com>
 
 
 Improvements
@@ -193,6 +216,33 @@ Here summuarised for the two opposite cases, the new results:
        time: 20m13s     | time: 11m57s      1.69x
 
 
+VirtualBox comparison
+---------------------
+
+Running the performances test in a VirtualBox with 2 threads CPU and 2GB of RAM:
+
+          vm:next             vm:evo2
+       ------------ basic-os -------------- ==============
+       30947 Mb (max)   |  3537 Mb (max)     8.75x  11.09x
+       24384 Mb (rest)  |  2559 Mb (rest)    9.53x  13.55x
+        3496 Mb (deb)   |  3496 Mb (deb)      -
+         814 Mb (wic)   |   820 Mb (wic)      -
+       10752 Mb (cache) |   233 Mb (cache)  46.15x
+       time: 12m34s     | time: 3m09s        3.99x
+
+          vm:next             vm:evo2
+       ------------ complete ------------- ===============
+       50350 Mb (max)   | 28652 Mb (max)     1.76x   2.11x
+       41159 Mb (rest)  | 19333 Mb (rest)    2.13x   3.15x
+        3496 Mb (deb)   |  3496 Mb (deb)      -
+        9155 Mb (wic)   |  9161 Mb (wic)      -
+       10762 Mb (cache) |   243 Mb (cache)  44.29x
+       time: 22m47s     | time: 11m44s       1.94x
+
+The build time improved even more than a real machine with 8 threads CPU and
+8GB of real RAM.
+
+
 Rebase in 'rebnext'
 -------------------
 
@@ -203,7 +253,7 @@ is still undergonig. This is the results from the 1st round of code assesment:
 From these numbers the first thing we notice is that the size of the deb cache
 does not matter at all because 10x more is not slower at all. This makes per-
 fectly sense because linking 385 or 1260 does not make such a difference.
-       
+
           full debs           minimal           rebnext
        ------------ basic-os -------------- ==============
         3498 Mb (max)   |  3489 Mb (max)     1.00x   1.00x
@@ -212,7 +262,7 @@ fectly sense because linking 385 or 1260 does not make such a difference.
          814 Mb (wic)   |   814 Mb (wic)      -
          273 Mb (cache) |   273 Mb (cache)   1.00x
        time: 3m09s      | time: 3m10s        2.58x
-       
+
 Compared to the original the performances increase is impressive, in both cases:
 
           original           cherries + schroot + rebase
@@ -235,7 +285,6 @@ Compared to the original the performances increase is impressive, in both cases:
 
 Considering that the local .deb cache growing with the time because new updates
 will be added, and comparing the performance gains between the basic-os and the
-complete image, we can say that on the long run also the complete case will 
+complete image, we can say that on the long run also the complete case will
 reach the 2x of performance at least in time building.
-
 
