@@ -27,23 +27,26 @@ do_install_imager_deps() {
     if [ ${ISAR_CROSS_COMPILE} -eq 1 ]; then
         distro="${HOST_BASE_DISTRO}-${BASE_DISTRO_CODENAME}"
     fi
+    session="${SCHROOT_OVERLAY_DIR}/${IMAGER_SCHROOT_SESSION_ID}"
 
     E="${@ isar_export_proxies(d)}"
-    deb_dl_dir_import ${SCHROOT_DIR} ${distro}
+    deb_dl_dir_import ${session}/upper ${distro}
+
     schroot -r -c ${IMAGER_SCHROOT_SESSION_ID} -d / -u root -- sh -c ' \
-        apt-get update \
-            -o Dir::Etc::SourceList="sources.list.d/isar-apt.list" \
-            -o Dir::Etc::SourceParts="-" \
-            -o APT::Get::List-Cleanup="0"
-        apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y \
-            --allow-unauthenticated --allow-downgrades --download-only install \
+        apt-get -y update
+        apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends \
+            --allow-unauthenticated --allow-downgrades -y install \
             ${IMAGER_INSTALL}'
 
-    deb_dl_dir_export ${SCHROOT_DIR} ${distro}
+    deb_dl_dir_export ${session}/upper ${distro}
+
     schroot -r -c ${IMAGER_SCHROOT_SESSION_ID} -d / -u root -- sh -c ' \
         apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y \
             --allow-unauthenticated --allow-downgrades install \
-            ${IMAGER_INSTALL}'
+            ${IMAGER_INSTALL}
+        apt-get -y clean'
+
+    sudo -E chroot ${SCHROOT_DIR} /usr/bin/apt-get -y clean
 }
 addtask install_imager_deps before do_image_tools after do_start_imager_session
 
