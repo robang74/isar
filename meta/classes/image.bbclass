@@ -310,8 +310,8 @@ python() {
 #       invalidate the SSTATE entries for most packages, even if they don't use the
 #       global SOURCE_DATE_EPOCH variable.
 rootfs_install_pkgs_install_prepend() {
-    if [ ! -z "${SOURCE_DATE_EPOCH}" ]; then
-        export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH}"
+    if [ -n "${SOURCE_DATE_EPOCH}" ]; then
+        export SOURCE_DATE_EPOCH
     fi
 }
 
@@ -443,13 +443,16 @@ EOSUDO
 
     # Set same time-stamps to the newly generated file/folders in the
     # rootfs image for the purpose of reproducible builds.
-    test ! -z "${SOURCE_DATE_EPOCH}" && \
-        sudo find ${ROOTFSDIR} -newermt \
-            "$(date -d@${SOURCE_DATE_EPOCH} '+%Y-%m-%d %H:%M:%S')" \
-            -printf "%y %p\n" \
-            -exec touch '{}' -h -d@${SOURCE_DATE_EPOCH} ';' > ${DEPLOY_DIR_IMAGE}/files.modified_timestamps && \
-            bbwarn "$(grep ^f ${DEPLOY_DIR_IMAGE}/files.modified_timestamps) \nModified above file timestamps to build image reproducibly"
-
+    if [ -n "${SOURCE_DATE_EPOCH}" ]; then
+        fn="${DEPLOY_DIR_IMAGE}/files.modified_timestamps"
+        if sudo find ${ROOTFSDIR} -newermt "$(date -d@${SOURCE_DATE_EPOCH} '+%Y-%m-%d %H:%M:%S')" \
+            -printf "%y %p\n" -exec touch '{}' -h -d@${SOURCE_DATE_EPOCH} ';' >"$fn"; then
+            if [ -e "$fn" ]; then
+                bbwarn "modified timestamp (${SOURCE_DATE_EPOCH}) of $(egrep ^f "$fn" | wc -l) files for image reproducibly\n        " \
+                       "List of files modified could be found here: .${DEPLOY_DIR_IMAGE}/files.modified_timestamps"
+            fi
+        fi
+    fi
 }
 addtask rootfs_finalize before do_rootfs after do_rootfs_postprocess
 
