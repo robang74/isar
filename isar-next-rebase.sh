@@ -6,10 +6,10 @@ set -e
 gfreload
 bcur
 pcache ||:
-if [ "x$1" == "x-r" ]; then
+if [ "x${1:-}" == "x-r" ]; then
     if lsrmt | grep -qw ilbers; then
         git remote remove ilbers
-    if
+    fi
 fi
 if ! lsrmt | grep -qw ilbers; then
     git remote add ilbers https://github.com/ilbers/isar.git
