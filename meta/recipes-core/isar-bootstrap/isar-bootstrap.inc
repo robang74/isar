@@ -15,7 +15,7 @@ PV = "1.0"
 
 BOOTSTRAP_FOR_HOST ?= "0"
 
-DEBOOTSTRAP ?= "qemu-debootstrap"
+DEBOOTSTRAP ?= "${@'qemu-debootstrap' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else 'debootstrap'}"
 ROOTFSDIR = "${WORKDIR}/rootfs"
 APTPREFS = "${WORKDIR}/apt-preferences"
 APTSRCS = "${WORKDIR}/apt-sources"
@@ -292,6 +292,10 @@ do_bootstrap() {
 
     sudo rm -rf --one-file-system "${ROOTFSDIR}"
     deb_dl_dir_import "${ROOTFSDIR}" "${BOOTSTRAP_BASE_DISTRO}-${BASE_DISTRO_CODENAME}"
+
+    test -z "${HOST_ARCH}" -o -z "${ROOTFS_ARCH}" -o -z "${DISTRO_ARCH}" && \
+        bbwarn "*** ATTENTION *** BOOTSTRAP_FOR_HOST=0, DEBOOTSTRAP=${DEBOOTSTRAP},"\
+            "HOST_ARCH=${HOST_ARCH}, ROOTFS_ARCH=${ROOTFS_ARCH}, DISTRO_ARCH=${DISTRO_ARCH}."
 
     sudo -E -s <<'EOSUDO'
         set -e
