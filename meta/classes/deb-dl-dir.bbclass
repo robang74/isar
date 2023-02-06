@@ -78,39 +78,48 @@ debsrc_download() {
 
 deb_dl_dir_import() {
     export pc="${DEBDIR}/${2}"
-    export rootfs="${1}"
-    sudo mkdir -p "${rootfs}"/var/cache/apt/archives/
+    export sc="${1}/var/cache/apt/archives/"
+    export tf="ln-P-write-test.ok"
+    sudo mkdir -p "${sc}"
     [ ! -d "${pc}" ] && return 0
-    flock -s "${pc}".lock -c '
+    flock -Fs "${pc}".lock sudo -Es << 'EOSUDO'
         set -e
         printenv | grep -q BB_VERBOSE_LOGS && set -x
 
-        sudo find "${pc}" -type f -iname "*\.deb" -exec \
-            ln -Pf -t "${rootfs}"/var/cache/apt/archives/ {} +
-    '
+        rm -f "${sc}/${tf}"
+        touch "${pc}/${tf}" || exit 1
+        ln -Pf -t "${sc}" "${pc}/${tf}" 2>/dev/null ||:
+        if [ -r "${sc}/${tf}" ]; then
+            find "${pc}" -type f -iname "*\.deb" -exec \
+                ln -Pf -t "${sc}" {} +
+        else
+            find "${pc}" -type f -iname "*\.deb" -exec \
+                cp -np owner --reflink=auto -t "${sc}" {} +
+        fi
+        rm -f "${pc}/${tf}"
+EOSUDO
 }
 
 deb_dl_dir_export() {
     export pc="${DEBDIR}/${2}"
-    export rootfs="${1}"
+    export sc="${1}/var/cache/apt/archives/"
+    export tf="ln-P-write-test.ok"
     mkdir -p "${pc}"
-    flock "${pc}".lock -c '
+    flock -F "${pc}".lock sudo -E /bin/sh -c "\
         set -e
         printenv | grep -q BB_VERBOSE_LOGS && set -x
 
-        find "${rootfs}"/var/cache/apt/archives/ \
-            -maxdepth 1 -type f -iname '*\.deb' |\
-        while read p; do
-            # skip files from a previous export
-            [ -f "${pc}/${p##*/}" ] && continue
-            # can not reuse bitbake function here, this is basically
-            # "repo_contains_package"
-            package=$(find "${REPO_ISAR_DIR}"/"${DISTRO}" -name ${p##*/})
-            if [ -n "$package" ]; then
-                cmp --silent "$package" "$p" && continue
-            fi
-            sudo ln -Pf "${p}" "${pc}"
-        done
-        sudo chown -R $(id -u):$(id -g) "${pc}"
-    '
+        rm -f '${pc}/${tf}'
+        touch '${sc}/${tf}' || exit 1
+        ln -Pf -t '${pc}' '${sc}/${tf}' 2>/dev/null ||:
+        if [ -r '${pc}/${tf}' ]; then
+            find '${sc}' -maxdepth 1 -type f -iname '*\.deb' \
+                -exec ln -P -t "${pc}" {} + 2>/dev/null ||:
+        else
+            find '${sc}' -maxdepth 1 -type f -iname '*\.deb' \
+                -exec cp -n --reflink=auto -t '${pc}' {} +
+        fi
+        rm -f '${sc}/${tf}'
+        chown -R $(id -u):$(id -g) '${pc}'
+"
 }
